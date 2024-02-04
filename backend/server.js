@@ -1,31 +1,35 @@
+import path from "path";
 import express from "express";
-import dotenv from "dotenv"; //to access dotenv file in root directory
+import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
-//routes
-import authRoutes from "./routes/authRoutes.js";
-import messageRoutes from "./routes/messageRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
+import authRoutes from "./routes/auth.routes.js";
+import messageRoutes from "./routes/message.routes.js";
+import userRoutes from "./routes/user.routes.js";
 
-//database
-import connectToDB from "./db/connectToDB.js";
+import connectToMongoDB from "./db/connectToMongoDB.js";
+import { app, server } from "./socket/socket.js";
 
-//creation of server
-const app = express();
-dotenv.config(); //now we can use the dotenv file
-app.use(express.json()); // to parse incoming request's json payload(from req.body)
-app.use(cookieParser()); //for protectRoute Middleware
-
-//defining port to be used for server
 const PORT = process.env.PORT || 5000;
 
-//using routes
+const __dirname = path.resolve();
+
+dotenv.config();
+
+app.use(express.json()); // to parse the incoming requests with JSON payloads (from req.body)
+app.use(cookieParser());
+
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
 
-//starting server
-app.listen(PORT, () => {
-  connectToDB();
-  console.log(`Server running on http://localhost:${PORT}`);
+app.use(express.static(path.join(__dirname, "/frontend/dist")));
+
+app.get("*", (req, res) => {
+	res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
+});
+
+server.listen(PORT, () => {
+	connectToMongoDB();
+	console.log(`Server Running on port ${PORT}`);
 });
